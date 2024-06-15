@@ -1,0 +1,49 @@
+services:
+  db:
+    image: postgres:14
+    restart: always
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-passwd}
+      POSTGRES_DB: db
+      PGDATABASE: db
+      PGPASSWORD: ${POSTGRES_PASSWORD:-passwd}
+      PGUSER: ${POSTGRES_USER:-postgres}
+    # environment:
+    #   POSTGRES_USER: ${POSTGRES_USER:-postgres}
+    #   POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-passwd}
+    #   POSTGRES_DB: t3-drizzle
+    ports:
+      - 127.0.0.1:${LOCAL_DB_PORT:-15339}:5432
+  
+  app:
+    platform: "linux/amd64"
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_CLIENTVAR: "clientvar"
+    working_dir: /app
+    ports:
+      - "3002:3002"
+    image: t3-app
+    environment:
+      - DATABASE_URL=database_url_goes_here
+    depends_on:
+      - db
+    command: ["npm", "start"]
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: pgadmin4@pgadmin.org
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
